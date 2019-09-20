@@ -4,11 +4,8 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Threading.Tasks;
 using ConsoleTools;
-using Microsoft.Azure.Management.ResourceManager.Fluent;
-using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.Identity.Client;
 using Microsoft.Identity.Client.Extensions.Msal;
-using Microsoft.Rest;
 
 namespace BuildPkiSample.Setup
 {
@@ -48,24 +45,7 @@ namespace BuildPkiSample.Setup
                 }).ExecuteAsync();
             }
 
-            return CreateAcquireTokenResult(authenticationResult);
-        }
-
-        private AcquireTokenResult CreateAcquireTokenResult(AuthenticationResult authenticationResult)
-        {
-            var credentials = new AzureCredentials(
-                new TokenCredentials(authenticationResult.AccessToken),
-                new TokenCredentials(authenticationResult.AccessToken),
-                _tenantId,
-                AzureEnvironment.AzureGlobalCloud);
-            return new AcquireTokenResult(authenticationResult.AccessToken, credentials, ExtractObjectId(authenticationResult.IdToken));
-
-            static string ExtractObjectId(string idToken)
-            {
-                var tokenHandler = new JwtSecurityTokenHandler();
-                JwtSecurityToken jwtToken = tokenHandler.ReadJwtToken(idToken);
-                return jwtToken.Claims.First(claim => claim.Type == "oid").Value;
-            }
+            return new AcquireTokenResult(authenticationResult.AccessToken, ExtractObjectId(authenticationResult.IdToken));
         }
 
         private static async Task<IAccount?> GetAccountAsync(IPublicClientApplication app)
@@ -96,5 +76,11 @@ namespace BuildPkiSample.Setup
             return Task.CompletedTask;
         }
 
+        private static string ExtractObjectId(string idToken)
+        {
+            var tokenHandler = new JwtSecurityTokenHandler();
+            JwtSecurityToken jwtToken = tokenHandler.ReadJwtToken(idToken);
+            return jwtToken.Claims.First(claim => claim.Type == "oid").Value;
+        }
     }
 }
