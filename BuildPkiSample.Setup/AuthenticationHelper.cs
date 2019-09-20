@@ -32,7 +32,7 @@ namespace BuildPkiSample.Setup
             var storageCreationProperties = new StorageCreationPropertiesBuilder("tokenCache.dat", ".", _clientId).Build();
             (await MsalCacheHelper.CreateAsync(storageCreationProperties)).RegisterCache(app.UserTokenCache);
             var account = await GetAccountAsync(app);
-            Microsoft.Identity.Client.AuthenticationResult authenticationResult;
+            AuthenticationResult authenticationResult;
             try
             {
                 authenticationResult = await app.AcquireTokenSilent(Scopes, account).ExecuteAsync();
@@ -46,10 +46,10 @@ namespace BuildPkiSample.Setup
                 }).ExecuteAsync();
             }
 
-            return CreateAuthenticationResult(authenticationResult);
+            return CreateAcquireTokenResult(authenticationResult);
         }
 
-        private AcquireTokenResult CreateAuthenticationResult(Microsoft.Identity.Client.AuthenticationResult authenticationResult)
+        private AcquireTokenResult CreateAcquireTokenResult(AuthenticationResult authenticationResult)
         {
             var credentials = new AzureCredentials(
                 new TokenCredentials(authenticationResult.AccessToken),

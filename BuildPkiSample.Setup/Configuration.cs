@@ -8,6 +8,6 @@
         public string ResourceGroupName { get; set; } = default!;
         public string ResourceGroupLocation { get; set; } = default!;
         public string VaultName { get; set; } = default!;
-        public string CertificateAuthorityObjectId { get; set; } = default!;
+        public string FunctionAppName { get; set; } = default!;
     }
 }

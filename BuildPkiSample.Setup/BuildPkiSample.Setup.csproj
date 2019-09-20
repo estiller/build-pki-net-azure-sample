@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <PackageReference Include="ConsoleMenu-simple" Version="2.4.0" />
+    <PackageReference Include="Microsoft.Azure.Management.AppService.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Azure.Management.KeyVault.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.0.0-rc1.19456.10" />
