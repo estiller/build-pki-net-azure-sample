@@ -92,8 +92,8 @@ namespace BuildPkiSample.Setup
                 .WithExistingResourceGroup(resourceGroup)
                 .DefineAccessPolicy()
                 .ForObjectId(_currentUserObjectId)
-                .AllowCertificatePermissions(CertificatePermissions.List, CertificatePermissions.Create,
-                    CertificatePermissions.Update, CertificatePermissions.Delete)
+                .AllowCertificatePermissions(CertificatePermissions.List, CertificatePermissions.Get, 
+                    CertificatePermissions.Create, CertificatePermissions.Update, CertificatePermissions.Delete)
                 .Attach()
                 .DefineAccessPolicy()
                 .ForObjectId(certificateAuthorityPrincipalId)
