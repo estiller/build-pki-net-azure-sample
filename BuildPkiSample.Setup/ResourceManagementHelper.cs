@@ -27,12 +27,25 @@ namespace BuildPkiSample.Setup
             _currentUserObjectId = acquireTokenResult.UserObjectId;
         }
 
-        public async Task<CreateAzureResourcesResult> CreateAzureResourcesAsync()
+        public async Task CreateAzureResourcesAsync(bool alwaysCreate)
         {
+            if (!alwaysCreate && await ResourceGroupExistsAsync())
+            {
+                return;
+            }
+
             var resourceGroup = await CreateResourceGroupAsync();
             var functionApp = await CreateFunctionAppAsync(resourceGroup);
-            var vault = await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
-            return new CreateAzureResourcesResult(resourceGroup, functionApp, vault);
+            await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
+        }
+
+        private Task<bool> ResourceGroupExistsAsync()
+        {
+            return ResourceManager
+                .Authenticate(_azureCredentials)
+                .WithSubscription(_configuration.SubscriptionId)
+                .ResourceGroups
+                .ContainAsync(_configuration.ResourceGroupName);
         }
 
         private Task<IResourceGroup> CreateResourceGroupAsync()
