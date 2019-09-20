@@ -25,10 +25,13 @@ namespace BuildPkiSample.Setup
         {
             var client = new KeyVaultClient(new TokenCredentials(_accessToken));
 
-            var certificateOperation = await client.CreateCertificateAsync(_vaultBaseUrl, _certificateName,
+            var certificateOperation = await client.CreateCertificateAsync(
+                _vaultBaseUrl, 
+                _certificateName,
                 new CertificatePolicy(
                     keyProperties: new KeyProperties(false, "RSA", 2048, false),
-                    x509CertificateProperties: new X509CertificateProperties("CN=Sample CA",
+                    x509CertificateProperties: new X509CertificateProperties(
+                        "CN=Sample CA",
                         keyUsage: new List<string> {X509KeyUsageFlags.DigitalSignature.ToString()},
                         ekus: new List<string>()),
                     issuerParameters: new IssuerParameters("Self")));
