@@ -8,8 +8,8 @@ namespace BuildPkiSample.Setup
         public static async Task Main()
         {
             var configuration = ReadConfiguration();
-            AcquireTokenResult acquireTokenResult = await new AuthenticationHelper(configuration.ClientId, configuration.TenantId).AcquireTokenAsync();
-            await new ResourceManagementHelper(acquireTokenResult, configuration).CreateAzureResourcesAsync();
+            AcquireTokenResult acquireTokenResult = await new AuthenticationHelper(configuration.ClientId, configuration.TenantId, AuthenticationHelper.AzureManagementScopes).AcquireTokenAsync();
+            await new ResourceManagementHelper(configuration, acquireTokenResult).CreateAzureResourcesAsync();
         }
 
         private static Configuration ReadConfiguration()

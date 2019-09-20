@@ -14,15 +14,17 @@ namespace BuildPkiSample.Setup
 {
     internal class AuthenticationHelper
     {
-        private static readonly string[] Scopes = { "https://management.azure.com/user_impersonation" };
+        public static readonly string[] AzureManagementScopes = { "https://management.azure.com/user_impersonation" };
 
         private readonly string _clientId;
         private readonly string _tenantId;
+        private readonly string[] _scopes;
 
-        public AuthenticationHelper(string clientId, string tenantId)
+        public AuthenticationHelper(string clientId, string tenantId, string[] scopes)
         {
             _clientId = clientId;
             _tenantId = tenantId;
+            _scopes = scopes;
         }
 
         public async Task<AcquireTokenResult> AcquireTokenAsync()
@@ -35,11 +37,11 @@ namespace BuildPkiSample.Setup
             AuthenticationResult authenticationResult;
             try
             {
-                authenticationResult = await app.AcquireTokenSilent(Scopes, account).ExecuteAsync();
+                authenticationResult = await app.AcquireTokenSilent(_scopes, account).ExecuteAsync();
             }
             catch (MsalUiRequiredException)
             {
-                authenticationResult = await app.AcquireTokenWithDeviceCode(Scopes, deviceCodeResult =>
+                authenticationResult = await app.AcquireTokenWithDeviceCode(_scopes, deviceCodeResult =>
                 {
                     Console.WriteLine(deviceCodeResult.Message);
                     return deviceCodeResult.VerificationUrl == null ? Task.CompletedTask : OpenBrowserAsync(deviceCodeResult.VerificationUrl);
@@ -56,7 +58,7 @@ namespace BuildPkiSample.Setup
                 new TokenCredentials(authenticationResult.AccessToken),
                 _tenantId,
                 AzureEnvironment.AzureGlobalCloud);
-            return new AcquireTokenResult(credentials, ExtractObjectId(authenticationResult.IdToken));
+            return new AcquireTokenResult(authenticationResult.AccessToken, credentials, ExtractObjectId(authenticationResult.IdToken));
 
             static string ExtractObjectId(string idToken)
             {

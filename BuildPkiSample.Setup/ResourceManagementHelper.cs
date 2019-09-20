@@ -11,7 +11,7 @@ namespace BuildPkiSample.Setup
         private readonly AcquireTokenResult _acquireTokenResult;
         private readonly Configuration _configuration;
 
-        public ResourceManagementHelper(AcquireTokenResult acquireTokenResult, Configuration configuration)
+        public ResourceManagementHelper(Configuration configuration, AcquireTokenResult acquireTokenResult)
         {
             _acquireTokenResult = acquireTokenResult;
             _configuration = configuration;
