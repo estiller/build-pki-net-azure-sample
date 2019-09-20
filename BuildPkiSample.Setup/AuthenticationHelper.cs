@@ -25,7 +25,7 @@ namespace BuildPkiSample.Setup
             _tenantId = tenantId;
         }
 
-        public async Task<AuthenticationResult> AcquireTokenAsync()
+        public async Task<AcquireTokenResult> AcquireTokenAsync()
         {
             var app = PublicClientApplicationBuilder.Create(_clientId).WithTenantId(_tenantId).WithDefaultRedirectUri().Build();
 
@@ -49,14 +49,14 @@ namespace BuildPkiSample.Setup
             return CreateAuthenticationResult(authenticationResult);
         }
 
-        private AuthenticationResult CreateAuthenticationResult(Microsoft.Identity.Client.AuthenticationResult authenticationResult)
+        private AcquireTokenResult CreateAuthenticationResult(Microsoft.Identity.Client.AuthenticationResult authenticationResult)
         {
             var credentials = new AzureCredentials(
                 new TokenCredentials(authenticationResult.AccessToken),
                 new TokenCredentials(authenticationResult.AccessToken),
                 _tenantId,
                 AzureEnvironment.AzureGlobalCloud);
-            return new AuthenticationResult(credentials, ExtractObjectId(authenticationResult.IdToken));
+            return new AcquireTokenResult(credentials, ExtractObjectId(authenticationResult.IdToken));
 
             static string ExtractObjectId(string idToken)
             {

@@ -2,9 +2,9 @@
 
 namespace BuildPkiSample.Setup
 {
-    internal class AuthenticationResult
+    internal class AcquireTokenResult
     {
-        public AuthenticationResult(AzureCredentials credentials, string userObjectId)
+        public AcquireTokenResult(AzureCredentials credentials, string userObjectId)
         {
             Credentials = credentials;
             UserObjectId = userObjectId;
