@@ -1,10 +1,12 @@
 ﻿using System.Threading.Tasks;
 using Microsoft.Azure.Management.AppService.Fluent;
+using Microsoft.Azure.Management.AppService.Fluent.Models;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.Rest;
+using SkuName = Microsoft.Azure.Management.Storage.Fluent.Models.SkuName;
 
 namespace BuildPkiSample.Setup
 {
@@ -44,14 +46,25 @@ namespace BuildPkiSample.Setup
                 .CreateAsync();
         }
         
-        private Task<IFunctionApp> CreateFunctionAppAsync(IResourceGroup resourceGroup)
+        private async Task<IFunctionApp> CreateFunctionAppAsync(IResourceGroup resourceGroup)
         {
-            return AppServiceManager
+            var appServiceManager = AppServiceManager.Authenticate(_azureCredentials, _configuration.SubscriptionId);
+            var appServicePlan = await appServiceManager
+                .AppServicePlans
+                .Define(_configuration.FunctionAppName + "Plan")
+                .WithRegion(_configuration.ResourceGroupLocation)
+                .WithExistingResourceGroup(resourceGroup)
+                .WithPricingTier(PricingTier.FromSkuDescription(new SkuDescription("Y1", "Dynamic", "Y1", "Y", 0)))
+                .WithOperatingSystem(OperatingSystem.Windows)
+                .CreateAsync();
+
+            return await AppServiceManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
                 .FunctionApps
                 .Define(_configuration.FunctionAppName)
-                .WithRegion(_configuration.ResourceGroupLocation)
+                .WithExistingAppServicePlan(appServicePlan)
                 .WithExistingResourceGroup(resourceGroup)
+                .WithNewStorageAccount(_configuration.FunctionAppName.ToLowerInvariant(), SkuName.StandardLRS)
                 .WithSystemAssignedManagedServiceIdentity()
                 .CreateAsync();
         }
