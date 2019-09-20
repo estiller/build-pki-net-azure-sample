@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Azure.KeyVault;
@@ -34,9 +35,11 @@ namespace BuildPkiSample.Setup
 
             while (certificateOperation.Status == "inProgress")
             {
-                await Task.Delay(500);
+                Console.WriteLine($"Creation of certificate '{_certificateName}' is in progress");
+                await Task.Delay(1000);
                 certificateOperation = await client.GetCertificateOperationAsync(_vaultBaseUrl, _certificateName);
             }
+            Console.WriteLine($"Creation of certificate '{_certificateName}' is in status '{certificateOperation.Status}'");
         }
     }
 }
