@@ -9,5 +9,6 @@
         public string ResourceGroupLocation { get; set; } = default!;
         public string VaultName { get; set; } = default!;
         public string FunctionAppName { get; set; } = default!;
+        public string CertificateName { get; set; } = default!;
     }
 }

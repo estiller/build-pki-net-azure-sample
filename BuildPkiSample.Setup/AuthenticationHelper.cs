@@ -12,6 +12,7 @@ namespace BuildPkiSample.Setup
     internal class AuthenticationHelper
     {
         public static readonly string[] AzureManagementScopes = { "https://management.azure.com/user_impersonation" };
+        public static readonly string[] KeyVaultScopes = { "https://vault.azure.net/user_impersonation" };
 
         private readonly string _clientId;
         private readonly string _tenantId;
