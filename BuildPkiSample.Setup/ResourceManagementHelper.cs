@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.AppService.Fluent.Models;
 using Microsoft.Azure.Management.KeyVault.Fluent;
@@ -6,6 +7,7 @@ using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
 using Microsoft.Rest;
+using OperatingSystem = Microsoft.Azure.Management.AppService.Fluent.OperatingSystem;
 using SkuName = Microsoft.Azure.Management.Storage.Fluent.Models.SkuName;
 
 namespace BuildPkiSample.Setup
@@ -31,6 +33,7 @@ namespace BuildPkiSample.Setup
         {
             if (!alwaysCreate && await ResourceGroupExistsAsync())
             {
+                Console.WriteLine($"Resource group '{_configuration.ResourceGroupName}' already exists. Skipping resource creation.");
                 return;
             }
 
@@ -48,15 +51,17 @@ namespace BuildPkiSample.Setup
                 .ContainAsync(_configuration.ResourceGroupName);
         }
 
-        private Task<IResourceGroup> CreateResourceGroupAsync()
+        private async Task<IResourceGroup> CreateResourceGroupAsync()
         {
-            return ResourceManager
+            var resourceGroup = await ResourceManager
                 .Authenticate(_azureCredentials)
                 .WithSubscription(_configuration.SubscriptionId)
                 .ResourceGroups
                 .Define(_configuration.ResourceGroupName)
                 .WithRegion(_configuration.ResourceGroupLocation)
                 .CreateAsync();
+            Console.WriteLine($"Successfully created or updated resource group '{resourceGroup.Name}' in region '{resourceGroup.RegionName}'");
+            return resourceGroup;
         }
         
         private async Task<IFunctionApp> CreateFunctionAppAsync(IResourceGroup resourceGroup)
@@ -70,8 +75,9 @@ namespace BuildPkiSample.Setup
                 .WithPricingTier(PricingTier.FromSkuDescription(new SkuDescription("Y1", "Dynamic", "Y1", "Y", 0)))
                 .WithOperatingSystem(OperatingSystem.Windows)
                 .CreateAsync();
+            Console.WriteLine($"Successfully created or updated app service plan '{appServicePlan.Name}'");
 
-            return await AppServiceManager
+            var functionApp = await AppServiceManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
                 .FunctionApps
                 .Define(_configuration.FunctionAppName)
@@ -80,11 +86,13 @@ namespace BuildPkiSample.Setup
                 .WithNewStorageAccount(_configuration.FunctionAppName.ToLowerInvariant(), SkuName.StandardLRS)
                 .WithSystemAssignedManagedServiceIdentity()
                 .CreateAsync();
+            Console.WriteLine($"Successfully created or updated function app '{functionApp.Name}'");
+            return functionApp;
         }
 
-        private Task<IVault> CreateVaultAsync(IResourceGroup resourceGroup, string certificateAuthorityPrincipalId)
+        private async Task CreateVaultAsync(IResourceGroup resourceGroup, string certificateAuthorityPrincipalId)
         {
-            return KeyVaultManager
+            var vault = await KeyVaultManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
                 .Vaults
                 .Define(_configuration.VaultName)
@@ -100,6 +108,7 @@ namespace BuildPkiSample.Setup
                 .AllowKeyPermissions(KeyPermissions.Sign)
                 .Attach()
                 .CreateAsync();
+            Console.WriteLine($"Successfully created or updated key vault '{vault.Name}'");
         }
     }
 }
