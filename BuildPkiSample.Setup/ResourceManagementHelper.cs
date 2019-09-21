@@ -95,8 +95,12 @@ namespace BuildPkiSample.Setup
                 .WithExistingResourceGroup(resourceGroup)
                 .WithExistingStorageAccount(storageAccount)
                 .WithSystemAssignedManagedServiceIdentity()
+                .DefineAuthentication()
+                .WithDefaultAuthenticationProvider(BuiltInAuthenticationProvider.AzureActiveDirectory)
+                .WithActiveDirectory(_configuration.CertificateAuthorityClientId, "https://login.microsoftonline.com/" + _configuration.TenantId)
+                .Attach()
                 .CreateAsync();
-            Console.WriteLine($"Successfully created or updated function app '{newCerts.Name}'. Note that user authentication is not setup from code and needs to be set manually.");
+            Console.WriteLine($"Successfully created or updated function app '{newCerts.Name}'");
 
             var renewCerts = await appServiceManager
                 .FunctionApps
