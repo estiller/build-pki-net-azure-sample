@@ -106,6 +106,7 @@ namespace BuildPkiSample.Setup
                 .DefineAccessPolicy()
                 .ForObjectId(certificateAuthorityPrincipalId)
                 .AllowKeyPermissions(KeyPermissions.Sign)
+                .AllowCertificatePermissions(CertificatePermissions.Get)
                 .Attach()
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated key vault '{vault.Name}'");
