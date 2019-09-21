@@ -16,8 +16,8 @@ namespace BuildPkiSample.Setup
 
         public RootCertificateHelper(Configuration configuration, string accessToken)
         {
-            _vaultBaseUrl = $"https://{configuration.VaultName.ToLowerInvariant()}.vault.azure.net/";
-            _certificateName = configuration.CertificateName;
+            _vaultBaseUrl = $"https://{configuration.ResourceNamePrefix.ToLowerInvariant()}vault.vault.azure.net/";
+            _certificateName = configuration.RootCertificateName;
             _accessToken = accessToken;
         }
 

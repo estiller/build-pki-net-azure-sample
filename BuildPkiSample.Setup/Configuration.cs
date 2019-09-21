@@ -8,6 +8,6 @@
         public string ResourceNamePrefix { get; set; } = default!;
         public string RegionName { get; set; } = default!;
         public string CertificateAuthorityClientId { get; set; } = default!;
-        public string CertificateName { get; set; } = default!;
+        public string RootCertificateName { get; set; } = default!;
     }
 }
