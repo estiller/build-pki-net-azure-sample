@@ -15,7 +15,7 @@
     <PackageReference Include="Microsoft.Azure.Management.AppService.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Azure.Management.KeyVault.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.26.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" Version="3.0.0-rc1.19456.10" />
+    <PackageReference Include="Microsoft.Azure.Management.Storage.Fluent" Version="1.26.0" />
     <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="3.0.0-rc1.19456.10" />
     <PackageReference Include="Microsoft.Extensions.Configuration.UserSecrets" Version="3.0.0-rc1.19456.10" />
     <PackageReference Include="Microsoft.Identity.Client" Version="4.3.1" />

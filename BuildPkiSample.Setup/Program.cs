@@ -20,7 +20,6 @@ namespace BuildPkiSample.Setup
             var configurationRoot = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.json")
                 .AddUserSecrets<Program>()
-                .AddEnvironmentVariables()
                 .Build();
             var configuration = configurationRoot.Get<Configuration>();
             return configuration;
