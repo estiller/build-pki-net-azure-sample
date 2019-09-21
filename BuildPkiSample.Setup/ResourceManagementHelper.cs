@@ -102,6 +102,7 @@ namespace BuildPkiSample.Setup
                 .ForObjectId(_currentUserObjectId)
                 .AllowCertificatePermissions(CertificatePermissions.List, CertificatePermissions.Get, 
                     CertificatePermissions.Create, CertificatePermissions.Update, CertificatePermissions.Delete)
+                .AllowKeyPermissions(KeyPermissions.Sign)  // This is required for local testing & debugging. Would remove for production.
                 .Attach()
                 .DefineAccessPolicy()
                 .ForObjectId(certificateAuthorityPrincipalId)
