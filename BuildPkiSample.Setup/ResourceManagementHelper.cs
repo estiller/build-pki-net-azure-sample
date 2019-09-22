@@ -38,8 +38,8 @@ namespace BuildPkiSample.Setup
             }
 
             var resourceGroup = await CreateResourceGroupAsync();
-            var (newCerts, renewalCerts) = await CreateFunctionAppsAsync(resourceGroup);
-            await CreateVaultAsync(resourceGroup, newCerts.SystemAssignedManagedServiceIdentityPrincipalId, renewalCerts.SystemAssignedManagedServiceIdentityPrincipalId);
+            var functionApp = await CreateFunctionAppsAsync(resourceGroup);
+            await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
         }
 
         private string ResourceGroupName => _configuration.ResourceNamePrefix;
@@ -66,7 +66,7 @@ namespace BuildPkiSample.Setup
             return resourceGroup;
         }
         
-        private async Task<(IFunctionApp newCerts, IFunctionApp renewalCerts)> CreateFunctionAppsAsync(IResourceGroup resourceGroup)
+        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup)
         {
             var storageAccount = await StorageManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
@@ -76,7 +76,8 @@ namespace BuildPkiSample.Setup
                 .WithExistingResourceGroup(resourceGroup)
                 .WithSku(StorageAccountSkuType.Standard_LRS)
                 .CreateAsync();
-            
+            Console.WriteLine($"Successfully created or updated storage account '{storageAccount.Name}'");
+
             var appServiceManager = AppServiceManager.Authenticate(_azureCredentials, _configuration.SubscriptionId);
             var appServicePlan = await appServiceManager
                 .AppServicePlans
@@ -88,9 +89,9 @@ namespace BuildPkiSample.Setup
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated app service plan '{appServicePlan.Name}'");
 
-            var newCerts = await appServiceManager
+            var functionApp = await appServiceManager
                 .FunctionApps
-                .Define(_configuration.ResourceNamePrefix + "NewCerts")
+                .Define(_configuration.ResourceNamePrefix + "Api")
                 .WithExistingAppServicePlan(appServicePlan)
                 .WithExistingResourceGroup(resourceGroup)
                 .WithExistingStorageAccount(storageAccount)
@@ -100,25 +101,13 @@ namespace BuildPkiSample.Setup
                 .WithActiveDirectory(_configuration.CertificateAuthorityClientId, "https://login.microsoftonline.com/" + _configuration.TenantId)
                 .Attach()
                 .CreateAsync();
-            Console.WriteLine($"Successfully created or updated function app '{newCerts.Name}'");
-
-            var renewCerts = await appServiceManager
-                .FunctionApps
-                .Define(_configuration.ResourceNamePrefix + "RenewCerts")
-                .WithExistingAppServicePlan(appServicePlan)
-                .WithExistingResourceGroup(resourceGroup)
-                .WithExistingStorageAccount(storageAccount)
-                .WithSystemAssignedManagedServiceIdentity()
-                .WithClientCertEnabled(true)
-                .CreateAsync();
-            Console.WriteLine($"Successfully created or updated function app '{newCerts.Name}'");
-
-            return (newCerts, renewCerts);
+            Console.WriteLine($"Successfully created or updated function app '{functionApp.Name}'");
+            return functionApp;
         }
 
-        private async Task CreateVaultAsync(IResourceGroup resourceGroup, params string[] certificateAuthorityPrincipalIds)
+        private async Task CreateVaultAsync(IResourceGroup resourceGroup, string certificateAuthorityPrincipalId)
         {
-            var vaultDefinition = KeyVaultManager
+            var vault = await KeyVaultManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
                 .Vaults
                 .Define(_configuration.ResourceNamePrefix + "Vault")
@@ -129,19 +118,13 @@ namespace BuildPkiSample.Setup
                 .AllowCertificatePermissions(CertificatePermissions.List, CertificatePermissions.Get, 
                     CertificatePermissions.Create, CertificatePermissions.Update, CertificatePermissions.Delete)
                 .AllowKeyPermissions(KeyPermissions.Sign)  // This is required for local testing & debugging. Would remove for production.
-                .Attach();
-
-            foreach (string principalId in certificateAuthorityPrincipalIds)
-            {
-                vaultDefinition = vaultDefinition
-                    .DefineAccessPolicy()
-                    .ForObjectId(principalId)
-                    .AllowKeyPermissions(KeyPermissions.Sign)
-                    .AllowCertificatePermissions(CertificatePermissions.Get)
-                    .Attach();
-            }
-            
-            var vault = await vaultDefinition.CreateAsync();
+                .Attach()
+                .DefineAccessPolicy()
+                .ForObjectId(certificateAuthorityPrincipalId)
+                .AllowKeyPermissions(KeyPermissions.Sign)
+                .AllowCertificatePermissions(CertificatePermissions.Get)
+                .Attach()
+                .CreateAsync();
             Console.WriteLine($"Successfully created or updated key vault '{vault.Name}'");
         }
     }
