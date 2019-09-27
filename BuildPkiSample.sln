@@ -15,7 +15,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Tests", "Tests", "{E6F5EC1C
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuildPkiSample.CertificateAuthority.BusinessLogic.IntegrationTests", "BuildPkiSample.CertificateAuthority.BusinessLogic.IntegrationTests\BuildPkiSample.CertificateAuthority.BusinessLogic.IntegrationTests.csproj", "{F53D89B8-893C-4A16-A49B-E0DD73D1B639}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildPkiSample.CertificateAuthority.Api", "BuildPkiSample.CertificateAuthority.Api\BuildPkiSample.CertificateAuthority.Api.csproj", "{F8047AD0-A45A-4C05-8702-FBF56FA7D48E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuildPkiSample.CertificateAuthority.Api", "BuildPkiSample.CertificateAuthority.Api\BuildPkiSample.CertificateAuthority.Api.csproj", "{F8047AD0-A45A-4C05-8702-FBF56FA7D48E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

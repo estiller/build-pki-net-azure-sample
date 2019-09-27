@@ -23,7 +23,7 @@ namespace BuildPkiSample.CertificateAuthority.Api
             HttpRequest req, ExecutionContext context, ILogger log)
         {
             log.LogInformation("C# HTTP trigger function processed a request.");
-            var certificateIssuer = CreateCertificateIssuer(context.FunctionAppDirectory);
+            var certificateIssuer = CertificateFunctionHelper.CreateCertificateIssuer(context.FunctionAppDirectory);
 
             string requestBody = await new StreamReader(req.Body).ReadToEndAsync();
 
@@ -44,30 +44,6 @@ namespace BuildPkiSample.CertificateAuthority.Api
             byte[] modulus = Convert.FromBase64String((string) data.publicKey.modulus);
             var publicKey = new RSAPublicKeyParameters(exponent, modulus);
             return (subjectName, publicKey);
-        }
-
-        private static CertificateIssuer CreateCertificateIssuer(string functionAppDirectory)
-        {
-            var configuration = ReadConfiguration(functionAppDirectory);
-            var serialNumberGenerator = new SerialNumberGenerator(configuration.StorageConnectionString, configuration.StorageContainerName);
-            return new CertificateIssuer(CreateKeyVaultClient(), configuration.RootCertificateId, serialNumberGenerator);
-        }
-
-        private static Configuration ReadConfiguration(string functionAppDirectory)
-        {
-            var configurationRoot = new ConfigurationBuilder()
-                .SetBasePath(functionAppDirectory)
-                .AddJsonFile("local.settings.json", optional: true, reloadOnChange: true)
-                .AddEnvironmentVariables()
-                .Build();
-            var configuration = configurationRoot.Get<Configuration>();
-            return configuration;
-        }
-
-        private static KeyVaultClient CreateKeyVaultClient()
-        {
-            var azureServiceTokenProvider = new AzureServiceTokenProvider();
-            return new KeyVaultClient(new KeyVaultClient.AuthenticationCallback(azureServiceTokenProvider.KeyVaultTokenCallback));
         }
     }
 }
