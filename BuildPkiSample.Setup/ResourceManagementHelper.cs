@@ -2,10 +2,12 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.AppService.Fluent.Models;
+using Microsoft.Azure.Management.Graph.RBAC.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
+using Microsoft.Azure.Management.ServiceBus.Fluent;
 using Microsoft.Azure.Management.Storage.Fluent;
 using Microsoft.Rest;
 using OperatingSystem = Microsoft.Azure.Management.AppService.Fluent.OperatingSystem;
@@ -38,7 +40,8 @@ namespace BuildPkiSample.Setup
             }
 
             var resourceGroup = await CreateResourceGroupAsync();
-            var functionApp = await CreateFunctionAppsAsync(resourceGroup);
+            var serviceBusQueue = await CreateServiceBusQueueAsync(resourceGroup);
+            var functionApp = await CreateFunctionAppsAsync(resourceGroup, serviceBusQueue);
             await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
         }
 
@@ -65,8 +68,23 @@ namespace BuildPkiSample.Setup
             Console.WriteLine($"Successfully created or updated resource group '{resourceGroup.Name}' in region '{resourceGroup.RegionName}'");
             return resourceGroup;
         }
-        
-        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup)
+
+        private async Task<IQueue> CreateServiceBusQueueAsync(IResourceGroup resourceGroup)
+        {
+            var serviceBus = await ServiceBusManager
+                .Authenticate(_azureCredentials, _configuration.SubscriptionId)
+                .Namespaces
+                .Define(_configuration.ResourceNamePrefix + "Bus")
+                .WithRegion(_configuration.RegionName)
+                .WithExistingResourceGroup(resourceGroup)
+                .WithSku(NamespaceSku.Basic)
+                .WithNewQueue(_configuration.CertificateRenewalQueueName, 1024)
+                .CreateAsync();
+            Console.WriteLine($"Successfully created or updated service bus '{serviceBus.Name}'");
+            return await serviceBus.Queues.GetByNameAsync(_configuration.CertificateRenewalQueueName);
+        }
+
+        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup, IQueue serviceBusQueue)
         {
             var storageAccount = await StorageManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
@@ -96,6 +114,7 @@ namespace BuildPkiSample.Setup
                 .WithExistingResourceGroup(resourceGroup)
                 .WithExistingStorageAccount(storageAccount)
                 .WithSystemAssignedManagedServiceIdentity()
+                .WithSystemAssignedIdentityBasedAccessTo(serviceBusQueue.Id, BuiltInRole.Parse("Azure Service Bus Data Receiver"))
                 .DefineAuthentication()
                 .WithDefaultAuthenticationProvider(BuiltInAuthenticationProvider.AzureActiveDirectory)
                 .WithActiveDirectory(_configuration.CertificateAuthorityClientId, "https://login.microsoftonline.com/" + _configuration.TenantId)
