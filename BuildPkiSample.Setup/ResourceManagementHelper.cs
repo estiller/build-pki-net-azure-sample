@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.AppService.Fluent.Models;
-using Microsoft.Azure.Management.Graph.RBAC.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
@@ -40,8 +39,8 @@ namespace BuildPkiSample.Setup
             }
 
             var resourceGroup = await CreateResourceGroupAsync();
-            var serviceBusQueue = await CreateServiceBusQueueAsync(resourceGroup);
-            var functionApp = await CreateFunctionAppsAsync(resourceGroup, serviceBusQueue);
+            var listenConnectionString = await CreateServiceBusQueueAsync(resourceGroup);
+            var functionApp = await CreateFunctionAppsAsync(resourceGroup, listenConnectionString);
             await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
         }
 
@@ -69,7 +68,7 @@ namespace BuildPkiSample.Setup
             return resourceGroup;
         }
 
-        private async Task<IQueue> CreateServiceBusQueueAsync(IResourceGroup resourceGroup)
+        private async Task<string> CreateServiceBusQueueAsync(IResourceGroup resourceGroup)
         {
             var serviceBus = await ServiceBusManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
@@ -78,13 +77,24 @@ namespace BuildPkiSample.Setup
                 .WithRegion(_configuration.RegionName)
                 .WithExistingResourceGroup(resourceGroup)
                 .WithSku(NamespaceSku.Basic)
-                .WithNewQueue(_configuration.CertificateRenewalQueueName, 1024)
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated service bus '{serviceBus.Name}'");
-            return await serviceBus.Queues.GetByNameAsync(_configuration.CertificateRenewalQueueName);
+
+            var queue = await serviceBus
+                .Queues
+                .Define(_configuration.CertificateRenewalQueue.Name)
+                .WithDefaultMessageTTL(TimeSpan.FromHours(1))
+                .WithNewListenRule(_configuration.CertificateRenewalQueue.ListenPolicyName)
+                .WithNewSendRule(_configuration.CertificateRenewalQueue.SendPolicyName)
+                .CreateAsync();
+            Console.WriteLine($"Successfully created or updated service bus queue '{queue.Name}'");
+
+            var listenPolicy = await queue.AuthorizationRules.GetByNameAsync(_configuration.CertificateRenewalQueue.ListenPolicyName);
+            var keys = await listenPolicy.GetKeysAsync();
+            return keys.PrimaryConnectionString;
         }
 
-        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup, IQueue serviceBusQueue)
+        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup, string serviceBusQueueConnectionString)
         {
             var storageAccount = await StorageManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
@@ -114,11 +124,11 @@ namespace BuildPkiSample.Setup
                 .WithExistingResourceGroup(resourceGroup)
                 .WithExistingStorageAccount(storageAccount)
                 .WithSystemAssignedManagedServiceIdentity()
-                .WithSystemAssignedIdentityBasedAccessTo(serviceBusQueue.Id, BuiltInRole.Parse("Azure Service Bus Data Receiver"))
                 .DefineAuthentication()
                 .WithDefaultAuthenticationProvider(BuiltInAuthenticationProvider.AzureActiveDirectory)
                 .WithActiveDirectory(_configuration.CertificateAuthorityClientId, "https://login.microsoftonline.com/" + _configuration.TenantId)
                 .Attach()
+                .WithAppSetting("ServiceBusQueueConnection", serviceBusQueueConnectionString)
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated function app '{functionApp.Name}'");
             return functionApp;
