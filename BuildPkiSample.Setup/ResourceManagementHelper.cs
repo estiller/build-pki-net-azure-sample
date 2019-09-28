@@ -126,7 +126,7 @@ namespace BuildPkiSample.Setup
                 .WithSystemAssignedManagedServiceIdentity()
                 .DefineAuthentication()
                 .WithDefaultAuthenticationProvider(BuiltInAuthenticationProvider.AzureActiveDirectory)
-                .WithActiveDirectory(_configuration.CertificateAuthorityClientId, "https://login.microsoftonline.com/" + _configuration.TenantId)
+                .WithActiveDirectory(_configuration.CertificateAuthorityClientId, $"https://login.microsoftonline.com/{_configuration.TenantId}/2.0")
                 .Attach()
                 .WithAppSetting("StorageConnectionString", await BuildStorageConnectionString())
                 .WithAppSetting("StorageContainerName", _configuration.FunctionStorageContainerName)
