@@ -13,6 +13,8 @@
   <ItemGroup>
     <PackageReference Include="ConsoleMenu-simple" Version="2.4.0" />
     <PackageReference Include="Microsoft.Azure.Management.AppService.Fluent" Version="1.26.1" />
+    <PackageReference Include="Microsoft.Azure.Management.DeviceProvisioningServices" Version="1.0.0" />
+    <PackageReference Include="Microsoft.Azure.Management.IotHub" Version="2.10.0-preview" />
     <PackageReference Include="Microsoft.Azure.Management.KeyVault.Fluent" Version="1.26.1" />
     <PackageReference Include="Microsoft.Azure.Management.ResourceManager.Fluent" Version="1.26.1" />
     <PackageReference Include="Microsoft.Azure.Management.ServiceBus.Fluent" Version="1.26.1" />
