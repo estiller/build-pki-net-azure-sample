@@ -9,6 +9,7 @@
         public string RegionName { get; set; } = default!;
         public string CertificateAuthorityClientId { get; set; } = default!;
         public CertificateRenewalQueueConfiguration CertificateRenewalQueue { get; set; } = default!;
+        public string FunctionStorageContainerName { get; set; } = default!;
         public string RootCertificateName { get; set; } = default!;
 
         public class CertificateRenewalQueueConfiguration
