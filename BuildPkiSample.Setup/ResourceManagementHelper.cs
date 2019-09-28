@@ -128,10 +128,22 @@ namespace BuildPkiSample.Setup
                 .WithDefaultAuthenticationProvider(BuiltInAuthenticationProvider.AzureActiveDirectory)
                 .WithActiveDirectory(_configuration.CertificateAuthorityClientId, "https://login.microsoftonline.com/" + _configuration.TenantId)
                 .Attach()
+                .WithAppSetting("StorageConnectionString", await BuildStorageConnectionString())
+                .WithAppSetting("StorageContainerName", _configuration.FunctionStorageContainerName)
+                .WithAppSetting("RootCertificateId", BuildRootCertificateId())
                 .WithAppSetting("ServiceBusQueueConnection", serviceBusQueueConnectionString)
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated function app '{functionApp.Name}'");
             return functionApp;
+
+            async Task<string> BuildStorageConnectionString()
+            {
+                var storageAccountKeys = await storageAccount.GetKeysAsync();
+                var storageAccountKeyValue = storageAccountKeys[0].Value;
+                return $"DefaultEndpointsProtocol=https;AccountName={storageAccount.Name};AccountKey={storageAccountKeyValue};EndpointSuffix=core.windows.net";
+            }
+
+            string BuildRootCertificateId() => $"https://{_configuration.ResourceNamePrefix.ToLowerInvariant()}vault.vault.azure.net/certificates/{_configuration.RootCertificateName.ToLowerInvariant()}";
         }
 
         private async Task CreateVaultAsync(IResourceGroup resourceGroup, string certificateAuthorityPrincipalId)
