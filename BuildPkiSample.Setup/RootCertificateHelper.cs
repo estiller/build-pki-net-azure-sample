@@ -21,7 +21,7 @@ namespace BuildPkiSample.Setup
             _accessToken = accessToken;
         }
 
-        public async Task GenerateRootCertificate()
+        public async Task<X509Certificate2> GenerateRootCertificate()
         {
             var client = new KeyVaultClient(new TokenCredentials(_accessToken));
 
@@ -43,6 +43,9 @@ namespace BuildPkiSample.Setup
                 certificateOperation = await client.GetCertificateOperationAsync(_vaultBaseUrl, _certificateName);
             }
             Console.WriteLine($"Creation of certificate '{_certificateName}' is in status '{certificateOperation.Status}'");
+
+            var certificate = await client.GetCertificateAsync(_vaultBaseUrl, _certificateName);
+            return new X509Certificate2(certificate.Cer);
         }
     }
 }
