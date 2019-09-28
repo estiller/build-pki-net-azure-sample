@@ -22,9 +22,12 @@ namespace BuildPkiSample.Clients.RequestCertificate
 
             var key = RSA.Create();
             var publicParameters = key.ExportParameters(false);
-            using var certificate = await IssueCertificate(subjectName, publicParameters, configuration, accessToken);
-            using var certificateWithPrivateKey = certificate.CopyWithPrivateKey(key);
+            var certificate = await IssueCertificate(subjectName, publicParameters, configuration, accessToken);
+            var certificateWithPrivateKey = certificate.CopyWithPrivateKey(key);
             StoreCertificate(certificateWithPrivateKey);
+            
+            Console.WriteLine("Stored issued certificate in the certificate store:");
+            Console.WriteLine(certificateWithPrivateKey);
         }
 
         private static void SetDefaultSerializerSettings()
@@ -50,10 +53,10 @@ namespace BuildPkiSample.Clients.RequestCertificate
             var authHelper = new AuthenticationHelper(configuration.ClientId, configuration.TenantId, configuration.CertificateAuthorityScope);
             var auth = await authHelper.AcquireTokenAsync();
 
-            using var client = new HttpClient { BaseAddress = new Uri(configuration.BaseUrl) };
+            var client = new HttpClient { BaseAddress = new Uri(configuration.BaseUrl) };
             var request = new {access_token = auth.AccessToken};
-            using var httpContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, MediaTypeNames.Application.Json);
-            using var responseMessage = await client.PostAsync(".auth/login/aad", httpContent);
+            var httpContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8, MediaTypeNames.Application.Json);
+            var responseMessage = await client.PostAsync(".auth/login/aad", httpContent);
             responseMessage.EnsureSuccessStatusCode();
             var serializedResponse = await responseMessage.Content.ReadAsStringAsync();
             dynamic response = JsonConvert.DeserializeObject<dynamic>(serializedResponse);
@@ -71,12 +74,12 @@ namespace BuildPkiSample.Clients.RequestCertificate
             Configuration configuration, string accessToken)
         {
             var request = new IssueCertificateRequest(subjectName, publicParameters);
-            using var httpContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8,
+            var httpContent = new StringContent(JsonConvert.SerializeObject(request), Encoding.UTF8,
                 MediaTypeNames.Application.Json);
 
-            using var client = new HttpClient {BaseAddress = new Uri(configuration.BaseUrl)};
+            var client = new HttpClient {BaseAddress = new Uri(configuration.BaseUrl)};
             client.DefaultRequestHeaders.Add("X-ZUMO-AUTH", accessToken);
-            using var responseMessage = await client.PostAsync("api/issueCertificate", httpContent);
+            var responseMessage = await client.PostAsync("api/issueCertificate", httpContent);
             responseMessage.EnsureSuccessStatusCode();
             var serializedResponse = await responseMessage.Content.ReadAsStringAsync();
 
@@ -93,6 +96,7 @@ namespace BuildPkiSample.Clients.RequestCertificate
         private static void StoreCertificate(X509Certificate2 certificateWithPrivateKey)
         {
             using var store = new X509Store(StoreLocation.CurrentUser);
+            store.Open(OpenFlags.ReadWrite);
             store.Add(certificateWithPrivateKey);
         }
     }
