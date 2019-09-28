@@ -2,6 +2,10 @@
 using System.Threading.Tasks;
 using Microsoft.Azure.Management.AppService.Fluent;
 using Microsoft.Azure.Management.AppService.Fluent.Models;
+using Microsoft.Azure.Management.DeviceProvisioningServices;
+using Microsoft.Azure.Management.DeviceProvisioningServices.Models;
+using Microsoft.Azure.Management.IotHub;
+using Microsoft.Azure.Management.IotHub.Models;
 using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
@@ -16,12 +20,14 @@ namespace BuildPkiSample.Setup
     internal class ResourceManagementHelper
     {
         private readonly Configuration _configuration;
+        private readonly string _accessToken;
         private readonly AzureCredentials _azureCredentials;
         private readonly string _currentUserObjectId;
 
         public ResourceManagementHelper(Configuration configuration, AcquireTokenResult acquireTokenResult)
         {
             _configuration = configuration;
+            _accessToken = acquireTokenResult.AccessToken;
             _azureCredentials = new AzureCredentials(
                 new TokenCredentials(acquireTokenResult.AccessToken),
                 new TokenCredentials(acquireTokenResult.AccessToken),
@@ -42,6 +48,8 @@ namespace BuildPkiSample.Setup
             var listenConnectionString = await CreateServiceBusQueueAsync(resourceGroup);
             var functionApp = await CreateFunctionAppsAsync(resourceGroup, listenConnectionString);
             await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
+            await CreateIotHub(resourceGroup);
+            await CreateDeviceProvisioningService(resourceGroup);
         }
 
         private string ResourceGroupName => _configuration.ResourceNamePrefix;
@@ -167,6 +175,36 @@ namespace BuildPkiSample.Setup
                 .Attach()
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated key vault '{vault.Name}'");
+        }
+
+        private async Task CreateIotHub(IResourceGroup resourceGroup)
+        {
+            var client = new IotHubClient(new TokenCredentials(_accessToken))
+            {
+                SubscriptionId = _configuration.SubscriptionId
+            };
+            var iotHub = await client.IotHubResource.BeginCreateOrUpdateAsync(
+                resourceGroup.Name,
+                _configuration.ResourceNamePrefix + "Hub",
+                new IotHubDescription(
+                    _configuration.RegionName,
+                    new IotHubSkuInfo("F1", IotHubSkuTier.Free, 1)));
+            Console.WriteLine($"Successfully created or updated Iot Hub '{iotHub.Name}'");
+        }
+        private async Task CreateDeviceProvisioningService(IResourceGroup resourceGroup)
+        {
+            var client = new IotDpsClient(new TokenCredentials(_accessToken))
+            {
+                SubscriptionId = _configuration.SubscriptionId
+            }; 
+            var deviceProvisioningService = await client.IotDpsResource.BeginCreateOrUpdateAsync(
+                resourceGroup.Name,
+                _configuration.ResourceNamePrefix + "Dps",
+                new ProvisioningServiceDescription(
+                    _configuration.RegionName,
+                    new IotDpsPropertiesDescription(), 
+                    new IotDpsSkuInfo("S1", "Standard", 1)));
+            Console.WriteLine($"Successfully created or updated Device Provisioning Service '{deviceProvisioningService.Name}'");
         }
     }
 }
