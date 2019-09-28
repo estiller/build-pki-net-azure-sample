@@ -17,6 +17,10 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuildPkiSample.CertificateA
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "BuildPkiSample.CertificateAuthority.Api", "BuildPkiSample.CertificateAuthority.Api\BuildPkiSample.CertificateAuthority.Api.csproj", "{F8047AD0-A45A-4C05-8702-FBF56FA7D48E}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "3-Clients", "3-Clients", "{236D197A-64F2-4ED6-AB8C-2990F17DAC10}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "BuildPkiSample.Clients.RequestCertificate", "BuildPkiSample.Clients.RequestCertificate\BuildPkiSample.Clients.RequestCertificate.csproj", "{61E223E9-F6DE-4A43-B471-75EBC4EC3614}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -39,6 +43,10 @@ Global
 		{F8047AD0-A45A-4C05-8702-FBF56FA7D48E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{F8047AD0-A45A-4C05-8702-FBF56FA7D48E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{F8047AD0-A45A-4C05-8702-FBF56FA7D48E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{61E223E9-F6DE-4A43-B471-75EBC4EC3614}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{61E223E9-F6DE-4A43-B471-75EBC4EC3614}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{61E223E9-F6DE-4A43-B471-75EBC4EC3614}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{61E223E9-F6DE-4A43-B471-75EBC4EC3614}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -49,6 +57,7 @@ Global
 		{E6F5EC1C-2F3C-4631-A832-026356636256} = {8985D146-8607-4D7C-91DF-AD5E447F710A}
 		{F53D89B8-893C-4A16-A49B-E0DD73D1B639} = {E6F5EC1C-2F3C-4631-A832-026356636256}
 		{F8047AD0-A45A-4C05-8702-FBF56FA7D48E} = {8985D146-8607-4D7C-91DF-AD5E447F710A}
+		{61E223E9-F6DE-4A43-B471-75EBC4EC3614} = {236D197A-64F2-4ED6-AB8C-2990F17DAC10}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {714D818B-7949-41CE-9AFE-CDB8670A4F21}
