@@ -18,7 +18,7 @@ namespace BuildPkiSample.Clients.RequestCertificate
             SetDefaultSerializerSettings();
             var configuration = ReadConfiguration();
             var accessToken = await GetAccessToken(configuration);
-            var subjectName = ReadSubjectName();
+            var subjectName = ReadAndConfirmSubjectName(configuration);
 
             var key = RSA.Create();
             var publicParameters = key.ExportParameters(false);
@@ -63,11 +63,15 @@ namespace BuildPkiSample.Clients.RequestCertificate
             return response.authenticationToken;
         }
 
-        private static string ReadSubjectName()
+        private static string ReadAndConfirmSubjectName(Configuration configuration)
         {
-            Console.Write("Enter certificate subject name: ");
-            var subjectName = Console.ReadLine();
-            return subjectName;
+            Console.Write($"The requested subject name is '{configuration.DeviceName}'. Please confirm (Y/n): ");
+            var confirmation = Console.ReadLine();
+            if (confirmation != "y" && confirmation != "Y")
+            {
+                Environment.Exit(1);
+            }
+            return configuration.DeviceName;
         }
 
         private static async Task<X509Certificate2> IssueCertificate(string subjectName, RSAParameters publicParameters,

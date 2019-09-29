@@ -6,5 +6,6 @@
         public string TenantId { get; set; } = default!;
         public string CertificateAuthorityScope { get; set; } = default!;
         public string BaseUrl { get; set; } = default!;
+        public string DeviceName { get; set; } = default!;
     }
 }
