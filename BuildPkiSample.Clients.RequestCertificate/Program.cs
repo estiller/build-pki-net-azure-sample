@@ -23,7 +23,7 @@ namespace BuildPkiSample.Clients.RequestCertificate
             var key = RSA.Create();
             var publicParameters = key.ExportParameters(false);
             var certificate = await IssueCertificate(subjectName, publicParameters, configuration, accessToken);
-            var certificateWithPrivateKey = certificate.CopyWithPrivateKey(key);
+            var certificateWithPrivateKey = CreateCertificateWithPrivateKey(certificate, key);
             StoreCertificate(certificateWithPrivateKey);
             
             Console.WriteLine("Stored issued certificate in the certificate store:");
@@ -95,6 +95,14 @@ namespace BuildPkiSample.Clients.RequestCertificate
 
             var certificate = new X509Certificate2(Convert.FromBase64String(response.Certificate));
             return certificate;
+        }
+
+        private static X509Certificate2 CreateCertificateWithPrivateKey(X509Certificate2 certificate, RSA key)
+        {
+            var certificateWithPrivateKey = certificate.CopyWithPrivateKey(key);
+            var rawCertificate = certificateWithPrivateKey.Export(X509ContentType.Pfx);
+            var persistableCertificate = new X509Certificate2(rawCertificate, string.Empty, X509KeyStorageFlags.PersistKeySet | X509KeyStorageFlags.UserKeySet);
+            return persistableCertificate;
         }
 
         private static void StoreCertificate(X509Certificate2 certificateWithPrivateKey)
