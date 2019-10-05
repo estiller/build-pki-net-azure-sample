@@ -164,7 +164,7 @@ namespace BuildPkiSample.Setup
                 .WithExistingResourceGroup(resourceGroup)
                 .DefineAccessPolicy()
                 .ForObjectId(_currentUserObjectId)
-                .AllowCertificatePermissions(CertificatePermissions.List, CertificatePermissions.Get, 
+                .AllowCertificatePermissions(CertificatePermissions.List, CertificatePermissions.Get, CertificatePermissions.Import,
                     CertificatePermissions.Create, CertificatePermissions.Update, CertificatePermissions.Delete)
                 .AllowKeyPermissions(KeyPermissions.Sign)  // This is required for local testing & debugging. Would remove for production.
                 .Attach()
