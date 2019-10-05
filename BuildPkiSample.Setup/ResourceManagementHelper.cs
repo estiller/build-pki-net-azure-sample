@@ -10,7 +10,6 @@ using Microsoft.Azure.Management.KeyVault.Fluent;
 using Microsoft.Azure.Management.KeyVault.Fluent.Models;
 using Microsoft.Azure.Management.ResourceManager.Fluent;
 using Microsoft.Azure.Management.ResourceManager.Fluent.Authentication;
-using Microsoft.Azure.Management.ServiceBus.Fluent;
 using Microsoft.Azure.Management.Storage.Fluent;
 using Microsoft.Rest;
 using OperatingSystem = Microsoft.Azure.Management.AppService.Fluent.OperatingSystem;
@@ -45,8 +44,7 @@ namespace BuildPkiSample.Setup
             }
 
             var resourceGroup = await CreateResourceGroupAsync();
-            var listenConnectionString = await CreateServiceBusQueueAsync(resourceGroup);
-            var functionApp = await CreateFunctionAppsAsync(resourceGroup, listenConnectionString);
+            var functionApp = await CreateFunctionAppsAsync(resourceGroup);
             await CreateVaultAsync(resourceGroup, functionApp.SystemAssignedManagedServiceIdentityPrincipalId);
             await CreateIotHub(resourceGroup);
             await CreateDeviceProvisioningService(resourceGroup);
@@ -76,33 +74,7 @@ namespace BuildPkiSample.Setup
             return resourceGroup;
         }
 
-        private async Task<string> CreateServiceBusQueueAsync(IResourceGroup resourceGroup)
-        {
-            var serviceBus = await ServiceBusManager
-                .Authenticate(_azureCredentials, _configuration.SubscriptionId)
-                .Namespaces
-                .Define(_configuration.ResourceNamePrefix + "Bus")
-                .WithRegion(_configuration.RegionName)
-                .WithExistingResourceGroup(resourceGroup)
-                .WithSku(NamespaceSku.Basic)
-                .CreateAsync();
-            Console.WriteLine($"Successfully created or updated service bus '{serviceBus.Name}'");
-
-            var queue = await serviceBus
-                .Queues
-                .Define(_configuration.CertificateRenewalQueue.Name)
-                .WithDefaultMessageTTL(TimeSpan.FromHours(1))
-                .WithNewListenRule(_configuration.CertificateRenewalQueue.ListenPolicyName)
-                .WithNewSendRule(_configuration.CertificateRenewalQueue.SendPolicyName)
-                .CreateAsync();
-            Console.WriteLine($"Successfully created or updated service bus queue '{queue.Name}'");
-
-            var listenPolicy = await queue.AuthorizationRules.GetByNameAsync(_configuration.CertificateRenewalQueue.ListenPolicyName);
-            var keys = await listenPolicy.GetKeysAsync();
-            return keys.PrimaryConnectionString;
-        }
-
-        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup, string serviceBusQueueConnectionString)
+        private async Task<IFunctionApp> CreateFunctionAppsAsync(IResourceGroup resourceGroup)
         {
             var storageAccount = await StorageManager
                 .Authenticate(_azureCredentials, _configuration.SubscriptionId)
@@ -139,7 +111,6 @@ namespace BuildPkiSample.Setup
                 .WithAppSetting("StorageConnectionString", await BuildStorageConnectionString())
                 .WithAppSetting("StorageContainerName", _configuration.FunctionStorageContainerName)
                 .WithAppSetting("RootCertificateId", BuildRootCertificateId())
-                .WithAppSetting("ServiceBusQueueConnection", serviceBusQueueConnectionString)
                 .CreateAsync();
             Console.WriteLine($"Successfully created or updated function app '{functionApp.Name}'");
             return functionApp;
