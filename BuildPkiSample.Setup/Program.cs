@@ -17,7 +17,7 @@ namespace BuildPkiSample.Setup
             acquireTokenResult = await new AuthenticationHelper(configuration.ClientId, configuration.TenantId, AuthenticationHelper.KeyVaultScopes).AcquireTokenAsync();
             var certificate = await new RootCertificateHelper(configuration, acquireTokenResult.AccessToken).GenerateRootCertificate();
 
-            await StoreCer(certificate);
+            await WriteCertificateToFile(certificate);
         }
 
         private static Configuration ReadConfiguration()
@@ -30,11 +30,11 @@ namespace BuildPkiSample.Setup
             return configuration;
         }
 
-        private static async Task StoreCer(X509Certificate2 certificate)
+        private static async Task WriteCertificateToFile(X509Certificate2 certificate)
         {
-            const string fileName = "IssuerCert.cer";
+            const string fileName = "RootCert.cer";
             var fullFilePath = Path.Combine(Environment.CurrentDirectory, fileName);
-            await File.WriteAllBytesAsync(fullFilePath, certificate.RawData);
+            await File.WriteAllTextAsync(fullFilePath, Convert.ToBase64String(certificate.Export(X509ContentType.Cert)));
             Console.WriteLine($"Stored public issuer certificate at '{fullFilePath}'");
         }
     }
