@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using System.Net.Http;
 using System.Net.Mime;
 using System.Security.Cryptography;
@@ -23,8 +24,9 @@ namespace BuildPkiSample.Clients.RequestCertificate
             var key = RSA.Create();
             var publicParameters = key.ExportParameters(false);
             var certificate = await IssueCertificate(subjectName, publicParameters, configuration, accessToken);
+            await WriteToFileAsync(certificate, "IssuedCertificate.cer");
             var certificateWithPrivateKey = CreateCertificateWithPrivateKey(certificate, key);
-            StoreCertificate(certificateWithPrivateKey);
+            StoreCertificateInUserStore(certificateWithPrivateKey);
             
             Console.WriteLine("Stored issued certificate in the certificate store:");
             Console.WriteLine(certificateWithPrivateKey);
@@ -67,11 +69,18 @@ namespace BuildPkiSample.Clients.RequestCertificate
         {
             Console.Write($"The requested subject name is '{configuration.DeviceName}'. Please confirm (Y/n): ");
             var confirmation = Console.ReadLine();
-            if (confirmation != "y" && confirmation != "Y")
+            switch (confirmation)
             {
-                Environment.Exit(1);
+                case "y":
+                case "Y":
+                    return configuration.DeviceName;
+                case "n":
+                case "N":
+                    Console.WriteLine("Enter the desired subject name:");
+                    return Console.ReadLine();
+                default:
+                    return ReadAndConfirmSubjectName(configuration);
             }
-            return configuration.DeviceName;
         }
 
         private static async Task<X509Certificate2> IssueCertificate(string subjectName, RSAParameters publicParameters,
@@ -97,6 +106,13 @@ namespace BuildPkiSample.Clients.RequestCertificate
             return certificate;
         }
 
+        private static async Task WriteToFileAsync(X509Certificate2 certificate, string fileName)
+        {
+            var fullPath = Path.Combine(Environment.CurrentDirectory, fileName);
+            await File.WriteAllTextAsync(fullPath, Convert.ToBase64String(certificate.Export(X509ContentType.Cert)));
+            Console.WriteLine($"Certificate was stored in file '{fullPath}'");
+        }
+
         private static X509Certificate2 CreateCertificateWithPrivateKey(X509Certificate2 certificate, RSA key)
         {
             var certificateWithPrivateKey = certificate.CopyWithPrivateKey(key);
@@ -105,7 +121,7 @@ namespace BuildPkiSample.Clients.RequestCertificate
             return persistableCertificate;
         }
 
-        private static void StoreCertificate(X509Certificate2 certificateWithPrivateKey)
+        private static void StoreCertificateInUserStore(X509Certificate2 certificateWithPrivateKey)
         {
             using var store = new X509Store(StoreLocation.CurrentUser);
             store.Open(OpenFlags.ReadWrite);
