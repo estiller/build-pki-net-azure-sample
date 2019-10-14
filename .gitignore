@@ -1,3 +1,6 @@
+# Custom Files
+BuildPkiSample.CertificateAuthority.Api/local.settings.json
+
 
 # Created by https://www.gitignore.io/api/aspnetcore,visualstudio,visualstudiocode
 # Edit at https://www.gitignore.io/?templates=aspnetcore,visualstudio,visualstudiocode
