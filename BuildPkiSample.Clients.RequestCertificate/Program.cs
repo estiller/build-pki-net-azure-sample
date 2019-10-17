@@ -125,7 +125,18 @@ namespace BuildPkiSample.Clients.RequestCertificate
         {
             using var store = new X509Store(StoreLocation.CurrentUser);
             store.Open(OpenFlags.ReadWrite);
+            DeleteOldCertificatesIfFound(store, certificateWithPrivateKey);
             store.Add(certificateWithPrivateKey);
+        }
+
+        private static void DeleteOldCertificatesIfFound(X509Store store, X509Certificate2 newCertificate)
+        {
+            var subject = newCertificate.GetNameInfo(X509NameType.SimpleName, false);
+            if (subject == null)
+                return;
+
+            var certificateCollection = store.Certificates.Find(X509FindType.FindBySubjectName, subject, false);
+            store.RemoveRange(certificateCollection);
         }
     }
 }
