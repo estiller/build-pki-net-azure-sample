@@ -1,11 +1,14 @@
-﻿using System;
+﻿#nullable enable
+using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using Microsoft.Azure.KeyVault;
 using Microsoft.Azure.KeyVault.Models;
 using Microsoft.Rest;
+using Newtonsoft.Json;
 
 namespace BuildPkiSample.Setup
 {
@@ -28,10 +31,15 @@ namespace BuildPkiSample.Setup
         {
             var client = new KeyVaultClient(new TokenCredentials(_accessToken));
 
-            //return CreateCertificateInKeyVaultAsync(client);
-            return CreateSelfSignedCertificateAndUploadAsync(client);
+            return CreateCertificateInKeyVaultAsync(client);
+            //return CreateSelfSignedCertificateAndUploadAsync(client);
         }
 
+        // NOTE - if you'd like to create the root certificate locally with .NET then this would be the way to go.
+        // However, this exposes the private key on the local machine which we'd rather avoid. Instead, use the alternative
+        // of generating the root certificate directly on Azure Key-Vault.
+        //
+        // ReSharper disable once UnusedMember.Local
         private Task<X509Certificate2> CreateSelfSignedCertificateAndUploadAsync(KeyVaultClient client)
         {
             var certificate = CreateSelfSignedCertificateAndUpload();
@@ -66,11 +74,6 @@ namespace BuildPkiSample.Setup
             return new X509Certificate2(certificateBundle.Cer);
         }
 
-        // NOTE - this would be the preferred way to create the certificate in Azure Key Vault, as the certificate's private key never leaves
-        // the service. However, it does not currently support specifying that we want to create a CA certificate using the certificate basic constraints.
-        // This code is left here for reference.
-        //
-        // ReSharper disable once UnusedMember.Local
         private async Task<X509Certificate2> CreateCertificateInKeyVaultAsync(KeyVaultClient client)
         {
             var certificateOperation = await client.CreateCertificateAsync(
@@ -78,10 +81,11 @@ namespace BuildPkiSample.Setup
                 _certificateName,
                 new CertificatePolicy(
                     keyProperties: new KeyProperties(false, "RSA", 2048, false),
-                    x509CertificateProperties: new X509CertificateProperties(
+                    x509CertificateProperties: new X509CertificatePropertiesEx(
                         "CN=" + RootSubjectName,
                         keyUsage: new List<string> {X509KeyUsageFlags.KeyCertSign.ToString()},
-                        ekus: new List<string> {"1.3.6.1.5.5.7.3.2", "1.3.6.1.5.5.7.3.1"}),
+                        ekus: new List<string> {"1.3.6.1.5.5.7.3.2", "1.3.6.1.5.5.7.3.1"},
+                        basicConstraints: new X509CertificatePropertiesEx.BasicConstraintsExtension(true, 1)),
                     issuerParameters: new IssuerParameters("Self")));
 
             while (certificateOperation.Status == "inProgress")
@@ -95,6 +99,39 @@ namespace BuildPkiSample.Setup
 
             var certificate = await client.GetCertificateAsync(_vaultBaseUrl, _certificateName);
             return new X509Certificate2(certificate.Cer);
+        }
+
+        // This class is a hack to expose support for setting the "basic_constraints" certificate attribute.
+        // See https://github.com/estiller/build-pki-net-azure-sample/issues/1
+        // Future SDK versions might expose this natively so this class will become redundant
+        [SuppressMessage("ReSharper", "IdentifierTypo")]
+        private class X509CertificatePropertiesEx : X509CertificateProperties
+        {
+            public X509CertificatePropertiesEx(string? subject = null,
+                IList<string>? ekus = null, 
+                SubjectAlternativeNames? subjectAlternativeNames = null,
+                IList<string>? keyUsage = null, 
+                int? validityInMonths = null, 
+                BasicConstraintsExtension? basicConstraints = null) 
+                : base(subject, ekus, subjectAlternativeNames, keyUsage, validityInMonths)
+            {
+                BasicConstraints = basicConstraints;
+            }
+
+            [JsonProperty("basic_constraints")] public BasicConstraintsExtension? BasicConstraints { get; set; }
+
+            public class BasicConstraintsExtension
+            {
+                public BasicConstraintsExtension(bool isCa, int pathLenConstraint)
+                {
+                    IsCA = isCa;
+                    PathLenConstraint = pathLenConstraint;
+                }
+
+                // ReSharper disable once InconsistentNaming
+                [JsonProperty("ca")] public bool IsCA { get; set; }
+                [JsonProperty("path_len_constraint")] public int PathLenConstraint { get; set; }
+            }
         }
     }
 }
